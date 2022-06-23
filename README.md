@@ -50,3 +50,13 @@ switch (jsonPacket.Header)
         break;
 }
 ```
+## Библиотека CommunicationLibrary
+Библиотека CommunicationLibrary создана для использования одних и тех же классов на клиенте и сервере. Осуществляет отправку сообщения на сервер с помощью метода
+```c#
+Communication.SendMessage(JsonConvert.SerializeObject(jsonPacket), Stream);
+```
+и получения информации от сервера
+```c#
+string data = Communication.ReceiveMessage(Stream);
+```
+используя json формат
