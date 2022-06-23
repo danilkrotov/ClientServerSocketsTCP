@@ -10,25 +10,25 @@
 
 Для общения с сервером необходимо инициализировать шифрование
 ```c#
-    Communication.StartClientEncrypt(stream);
+Communication.StartClientEncrypt(stream);
 ```
 Для отправки сообщений необходимо использовать класс JsonPacket
 ```c#
-    public class JsonPacket
-    {
-        /// <summary>
-        /// Заголовок (string)
-        /// </summary>
-        public string Header { get; set; }
-        /// <summary>
-        /// Данные авторизации (json)
-        /// </summary>
-        public string AuthData { get; set; }
-        /// <summary>
-        /// Сообщение (json)
-        /// </summary>
-        public string Message { get; set; }
-    }
+public class JsonPacket
+{
+    /// <summary>
+    /// Заголовок (string)
+    /// </summary>
+    public string Header { get; set; }
+    /// <summary>
+    /// Данные авторизации (json)
+    /// </summary>
+    public string AuthData { get; set; }
+    /// <summary>
+    /// Сообщение (json)
+    /// </summary>
+    public string Message { get; set; }
+}
 ```
 Header - Необходимо прописать текстовый заголовок для понимания сервером что делать с сообщением
 AuthData - Служит для отправки json строки с логином и хэшем пароля
@@ -37,16 +37,16 @@ Message - Служит для передачи объекта на сервер 
 ## Сервер
 Расшифровывает JsonPacket, предполагает работу в блоке switch case
 ```c#
-    switch (jsonPacket.Header)
-    {
-        case "Test":
-            Console.WriteLine("Test Packet: " + jsonPacket.Message);
-            jsonPacket.Message = "Ответ";
-            Communication.SendMessage(JsonConvert.SerializeObject(jsonPacket), Stream);
-            break;                                        
-        default:
-            Console.WriteLine("[" + Id + "] " + "Пришел пакет с именем: " + jsonPacket.Header + " такой пакет не был распознан");
-            loop = false;
-            break;
-    }
+switch (jsonPacket.Header)
+{
+    case "Test":
+        Console.WriteLine("Test Packet: " + jsonPacket.Message);
+        jsonPacket.Message = "Ответ";
+        Communication.SendMessage(JsonConvert.SerializeObject(jsonPacket), Stream);
+        break;                                        
+    default:
+        Console.WriteLine("[" + Id + "] " + "Пришел пакет с именем: " + jsonPacket.Header + " такой пакет не был распознан");
+        loop = false;
+        break;
+}
 ```
