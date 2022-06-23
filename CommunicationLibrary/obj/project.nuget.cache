@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "tV25BbhGgZEggYoWL3Cuk4zZwbiemOrYthadNxCR3KsqzZr5URom7KJ+YZ6f0cyy62y09fwaX0E92A7JYdTUTQ==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Danila.Krotov\\source\\repos\\ClientServerSocketsTCP\\CommunicationLibrary\\CommunicationLibrary.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Danila.Krotov\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}
