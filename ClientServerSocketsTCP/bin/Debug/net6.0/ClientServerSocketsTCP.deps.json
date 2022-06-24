@@ -1,0 +1,50 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "ClientServerSocketsTCP/1.0.0": {
+        "dependencies": {
+          "CommunicationLibrary": "1.0.0",
+          "Newtonsoft.Json": "13.0.0.0"
+        },
+        "runtime": {
+          "ClientServerSocketsTCP.dll": {}
+        }
+      },
+      "CommunicationLibrary/1.0.0": {
+        "runtime": {
+          "CommunicationLibrary.dll": {}
+        }
+      },
+      "Newtonsoft.Json/13.0.0.0": {
+        "runtime": {
+          "Newtonsoft.Json.dll": {
+            "assemblyVersion": "13.0.0.0",
+            "fileVersion": "13.0.1.25517"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "ClientServerSocketsTCP/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "CommunicationLibrary/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Newtonsoft.Json/13.0.0.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
