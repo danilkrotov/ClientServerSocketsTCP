@@ -1,6 +1,8 @@
 # ClientServerSocketsTCP (В разработке)
 
 Проба пера клиент-серверного приложения на сокетах TCP
+* Реализовано асимметричное и симметричное шифрование RSA + AES
+* Библиотека CommunicationLibrary пересобрана в .NET Standart 2.0 в неё вложен Json.NET - Newtonsoft Что позволит клиенту запускатся на Unity под Android и iOS
 
 ## Клиент
 Клиент создан для тестирования шифрования и в ознакомительных целях
@@ -35,20 +37,31 @@ AuthData - Служит для отправки json строки с логин�
 Message - Служит для передачи объекта на сервер в формате json
 
 ## Сервер
-Расшифровывает JsonPacket, предполагает работу в блоке switch case
+Работа сервера вынесена в два метода Authentication для проверки логина и пароля и Actions для разбора заголовка и выполнения необходимого действия
 ```c#
-switch (jsonPacket.Header)
-{
-    case "Test":
-        Console.WriteLine("Test Packet: " + jsonPacket.Message);
-        jsonPacket.Message = "Ответ";
-        Communication.SendMessage(JsonConvert.SerializeObject(jsonPacket), Stream);
-        break;                                        
-    default:
-        Console.WriteLine("[" + Id + "] " + "Пришел пакет с именем: " + jsonPacket.Header + " такой пакет не был распознан");
-        loop = false;
-        break;
-}
+    private bool Authentication(string authData)
+    {
+        //Предполагается использование объекта с данными авторизации
+        //UserInfo userInfo = JsonConvert.DeserializeObject<UserInfo>(AuthData);
+        return true;
+    }
+
+    private void Actions(JsonPacket jsonPacket) 
+    {
+        switch (jsonPacket.Header)
+        {
+            case "Test":
+                //Выполняем действие с пришедшим заголовком Test
+                Console.WriteLine("Test Packet: " + jsonPacket.Message);
+                //Отправляем обратно данные если это необходимо
+                JsonPacket responseJsonPacket = new JsonPacket(jsonPacket.Header, null, "Ответ");
+                Communication.SendMessage(JsonConvert.SerializeObject(responseJsonPacket), Stream);
+                break;
+            default:
+                Console.WriteLine("[" + Id + "] " + "Пришел пакет с именем: " + jsonPacket.Header + " такой пакет не был распознан");
+                break;
+        }
+    }
 ```
 ## Библиотека CommunicationLibrary
 Библиотека CommunicationLibrary создана для использования одних и тех же классов на клиенте и сервере. Осуществляет отправку сообщения на сервер с помощью метода
@@ -59,4 +72,5 @@ Communication.SendMessage(JsonConvert.SerializeObject(jsonPacket), Stream);
 ```c#
 string data = Communication.ReceiveMessage(Stream);
 ```
-используя json формат
+используя json формат.
+Библиотека сконфигурирована для работы на Unity 3D при Build'e на Android или iOS (для этого необходимо добавить CommunicationLibrary.dll в проект Unity)
