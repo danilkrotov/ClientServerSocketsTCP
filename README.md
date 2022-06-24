@@ -16,21 +16,28 @@ Communication.StartClientEncrypt(stream);
 ```
 Для отправки сообщений необходимо использовать класс JsonPacket
 ```c#
-public class JsonPacket
-{
-    /// <summary>
-    /// Заголовок (string)
-    /// </summary>
-    public string Header { get; set; }
-    /// <summary>
-    /// Данные авторизации (json)
-    /// </summary>
-    public string AuthData { get; set; }
-    /// <summary>
-    /// Сообщение (json)
-    /// </summary>
-    public string Message { get; set; }
-}
+    public class JsonPacket
+    {
+        /// <summary>
+        /// Заголовок (string)
+        /// </summary>
+        public string Header;
+        /// <summary>
+        /// Данные авторизации (json)
+        /// </summary>
+        public string AuthData;
+        /// <summary>
+        /// Сообщение (json)
+        /// </summary>
+        public string Message;
+
+        public JsonPacket(string header, string authData, string Message) 
+        {
+            this.Header = header;
+            this.AuthData = authData;
+            this.Message = Message;
+        }
+    }
 ```
 Header - Необходимо прописать текстовый заголовок для понимания сервером что делать с сообщением
 AuthData - Служит для отправки json строки с логином и хэшем пароля
