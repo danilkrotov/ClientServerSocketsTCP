@@ -79,5 +79,5 @@ Communication.SendMessage(JsonConvert.SerializeObject(jsonPacket), Stream);
 ```c#
 string data = Communication.ReceiveMessage(Stream);
 ```
-используя json формат.
+используя json формат.<br>
 Библиотека сконфигурирована для работы на Unity 3D при Build'e на Android или iOS (для этого необходимо добавить CommunicationLibrary.dll в проект Unity)
