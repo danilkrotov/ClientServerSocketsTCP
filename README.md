@@ -1,4 +1,4 @@
-# ClientServerSocketsTCP (В разработке)
+# ClientServerSocketsTCP
 
 Клиент-серверное приложение на сокетах TCP
 * Реализовано асимметричное и симметричное шифрование RSA + AES
