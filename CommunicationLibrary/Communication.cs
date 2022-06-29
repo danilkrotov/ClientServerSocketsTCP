@@ -1,28 +1,40 @@
 ﻿using CommunicationLibrary.Crypt;
+using Newtonsoft.Json;
 using System;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace CommunicationLibrary
 {
     public class Communication
     {
+        private NetworkStream stream; // Сохранённый поток
+        private Aes aes; // Сохранённое шифрование
+        /// <summary>
+        /// Класс выполняющий шифрование, отправку и получение данных. Необходимо указать NetworkStream.
+        /// </summary>
+        public Communication(NetworkStream networkStream) 
+        {
+            stream = networkStream;
+        }
+
         #region Отправка сообщения
-        private static void SendToStreamMessage(string json, NetworkStream stream)
+        private void SendToStreamMessage(string json)
         {
             // Разбираем json на byte[]
             byte[] mainData = Encoding.UTF8.GetBytes(json);
 
-            //Создаем пакет размером в 4 байта + размер изначального пакета.
+            //Создаем массив байт размером в 4 байта + размер изначального массива байт.
             byte[] bytePacket = new byte[4 + mainData.Length];
 
-            //Размер пакета помещаем в первые 4 байта (Размер Int32 всегда умещается в 4, не превышать Int32 2 147 483 648)
+            //Размер массива байт mainData помещаем в первые 4 байта (Размер Int32 всегда умещается в 4, не превышать Int32 2 147 483 648)
             byte[] bytePacketLenght = BitConverter.GetBytes(mainData.Length);
 
-            //В bytePacket с 0 индекса вкладываем bytePacketLenght (должен влезть до 4)
+            //В bytePacket с 0 индекса вкладываем bytePacketLenght (до 4)
             bytePacketLenght.CopyTo(bytePacket, 0);
 
-            //В bytePacket с 4 индекса, ложим оставшуюся дату
+            //В bytePacket начиная с 4 индекса копируем основную информацию mainData
             mainData.CopyTo(bytePacket, 4);
 
             // Отправка
@@ -31,24 +43,24 @@ namespace CommunicationLibrary
         #endregion
 
         #region Получение сообщения
-        private static string ReceiveToStreamMessage(NetworkStream stream)
+        private string ReceiveToStreamMessage()
         {
-            byte[] bytePacketLenght = new byte[4]; // создаем байтовый массив (куда запишем длину пакета)
-            //Пытаемся считать первые 4 байта, если такие присутствуют, то это необходимый нам пакет затем пробуем посмотреть его размер
-            int firstByte = stream.ReadByte();
+            // Создаем байтовый массив (Куда будем пробовать считать длину входящего сообщения (bytePacket) )
+            byte[] bytePacketLenght = new byte[4];
+            //Пытаемся считать первые 4 байта
+            int firstByte = stream.ReadByte(); // Считывает байт из NetworkStream и перемещает позицию в потоке на один байт или возвращает –1, если достигнут конец потока.
             int secondByte = stream.ReadByte();
             int thirdByte = stream.ReadByte();
             int fourthByte = stream.ReadByte();
             if (firstByte == -1 || secondByte == -1 || thirdByte == -1 || fourthByte == -1)
             {
-                //Если хоть один из этих байтов -1 , значит выходим, такие данные в нашем потоке нам не нужны
-                Console.WriteLine("В первых 4 байтах не найден размер пакета, stream пуст");
-                return null;
+                //Если хоть один из этих байтов -1 , создаём исключение т.к. первые 4 байта должны существовать при любом дроблении TCP пакета, ситуация непредвиденная и нуждается в проверке
+                throw new Exception("CommunicationLibrary: В первых 4 байтах не найден размер пакета или stream пуст");
             }
             else
             {
                 //Считываем первые 4 байта
-                bytePacketLenght[0] = Convert.ToByte(firstByte); // Считывает байт из NetworkStream и перемещает позицию в потоке на один байт или возвращает –1, если достигнут конец потока.
+                bytePacketLenght[0] = Convert.ToByte(firstByte);
                 bytePacketLenght[1] = Convert.ToByte(secondByte);
                 bytePacketLenght[2] = Convert.ToByte(thirdByte);
                 bytePacketLenght[3] = Convert.ToByte(fourthByte);
@@ -61,24 +73,23 @@ namespace CommunicationLibrary
                 int dataLength = 0;
                 int exitCycle = 0;
 
-                dataLength = BitConverter.ToInt32(bytePacketLenght, 0); // Конвертируем байты в числа
-                data = new byte[dataLength]; // готовим буфер под необходимый размер
-                int allBytes = 0; // инициализация, общее количество принятых байтов
+                dataLength = BitConverter.ToInt32(bytePacketLenght, 0); // Считываем массив байтов и конвертируем его в целое число размера входящих данных
+                data = new byte[dataLength]; // Готовим буфер под необходимый размер
+                int allBytes = 0; // Инициализация, общее количество принятых байтов
+
+                //Собираем в builder (string) информацию которая пришла с помощью цикла do while
                 do
                 {
-                    //Console.WriteLine("WAIT READ");
                     int bytes = stream.Read(data, 0, data.Length);
                     builder.Append(Encoding.UTF8.GetString(data, 0, bytes));
                     exitCycle++;
                     allBytes = allBytes + bytes;
                 }
-                while (allBytes < dataLength || exitCycle == 50); //выходим если за 50 повторов не удалось собрать пакет
+                while (allBytes < dataLength || exitCycle == 50); // Выходим если за 50 повторов циклов не получилось собрать информацию
 
                 if (exitCycle == 50)
                 {
-                    //за 50 циклов не удалось собрать пакет, выдаём null
-                    Console.WriteLine("За 50 циклов не удалось собрать пакет");
-                    return null;
+                    throw new Exception("CommunicationLibrary: В течении 50 циклов не удалось достигнуть размера входящих данных (dataLength)");
                 }
                 else
                 {
@@ -87,7 +98,7 @@ namespace CommunicationLibrary
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Подключение прервано CommunicationLibrary: " + ex.Message); //соединение было прервано
+                Console.WriteLine("CommunicationLibrary: Подключение прервано по причине " + ex.Message); //соединение было прервано
                 return null;
             }
         }
@@ -97,16 +108,19 @@ namespace CommunicationLibrary
         /// <summary>
         /// Используется для создания зашифрованного канала, обмена ключами, предполагается запуск на стороне сервера
         /// </summary>
-        public static void StartServerEncrypt(NetworkStream stream)
+        public void StartServerEncrypt()
         {
+            
             EncryptRSA.CreateKey(); // Создаёт открытый и закрытый ключ RSA. Открывает доступ к открытому ключу.
             string rsaKey = EncryptRSA.GetKey(); // Получаем открытый ключ
-            SendToStreamMessage(rsaKey, stream);  //Отправляем клиенту открытый ключ
+            SendToStreamMessage(rsaKey); // Отправляем клиенту открытый ключ
+            
+            string streamString = ReceiveToStreamMessage(); // Ждём сообщение от клиента
+            byte[] encryptData = Convert.FromBase64String(streamString); // Переводим сообщение обратно в byte[]
+            string aesKey = EncryptRSA.Decrypt(encryptData); // Расшифровываем сообщение с помощью закрытого ключа
+            EncryptAES.LoadKeyInJson(aesKey); // Загружаем симметричный AES ключ
 
-            string streamString = ReceiveToStreamMessage(stream); // ждём сообщение от клиента
-            byte[] encryptData = Convert.FromBase64String(streamString); // переводим сообщение обратно в byte[]
-            string aesKey = EncryptRSA.Decrypt(encryptData); // расшифровываем сообщение с помощью закрытого ключа
-            EncryptAES.LoadKeyInJson(aesKey); // загружаем симметричный AES ключ
+            aes = EncryptAES.myAes; // Сохраняем AES для последующего шифрования
         }
         #endregion
 
@@ -114,29 +128,30 @@ namespace CommunicationLibrary
         /// <summary>
         /// Используется для создания зашифрованного канала, обмена ключами, предполагается запуск на стороне клиента
         /// </summary>
-        public static void StartClientEncrypt(NetworkStream stream)
-        {
-            string rsaKey = ReceiveToStreamMessage(stream); //ждём сообщение от сервера с открытым ключом
-            EncryptRSA.LoadKeyInXML(rsaKey); //загружаем открытый ключ сервера
+        public void StartClientEncrypt()
+        {            
+            string rsaKey = ReceiveToStreamMessage(); // Ждём сообщение от сервера с открытым ключом
+            EncryptRSA.LoadKeyInXML(rsaKey); // Загружаем открытый ключ сервера
+            
+            EncryptAES.CreateKey(); // Создаём симметричный ключ
+            string aesKey = EncryptAES.GetKey(); // Получаем симметричный ключ в виде строки
+            byte[] encryptData = EncryptRSA.Encrypt(aesKey); // Зашифровываем симметричный ключ открытым ключом сервера
+            SendToStreamMessage(Convert.ToBase64String(encryptData)); // Отправляем серверу зашифрованное сообщение
 
-            EncryptAES.CreateKey(); //Создаём симметричный ключ
-            string aesKey = EncryptAES.GetKey(); //Получаем симметричный ключ в виде строки
-            byte[] encryptData = EncryptRSA.Encrypt(aesKey); //зашифровываем симметричный ключ открытым ключом сервера
-            SendToStreamMessage(Convert.ToBase64String(encryptData), stream);  //Отправляем серверу зашифрованное сообщение
+            aes = EncryptAES.myAes; // Сохраняем AES для последующего шифрования
         }
         #endregion
 
         #region Отправка \ Получение сообщений
-        public static void SendMessage(string message, NetworkStream stream)
+        public void SendMessage(JsonPacket message)
         {
-            string encryptData = Convert.ToBase64String(EncryptAES.Encrypt(message)); //зашифровываем информацию
-            SendToStreamMessage(encryptData, stream);
+            string encryptData = Convert.ToBase64String(EncryptAES.Encrypt(JsonConvert.SerializeObject(message), aes)); // Зашифровываем информацию с помощью AES
+            SendToStreamMessage(encryptData);
         }
 
-        public static string ReceiveMessage(NetworkStream stream)
+        public string ReceiveMessage()
         {
-            string encryptData = ReceiveToStreamMessage(stream);
-            return EncryptAES.Decrypt(Convert.FromBase64String(encryptData)); //расшифровываем информацию
+            return EncryptAES.Decrypt(Convert.FromBase64String(ReceiveToStreamMessage()), aes); // Расшифровываем информацию с помощью AES
         }
         #endregion
     }

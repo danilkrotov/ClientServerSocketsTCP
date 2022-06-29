@@ -12,7 +12,7 @@ namespace CommunicationLibrary.Crypt
     }
     internal class EncryptAES
     {
-        private static Aes myAes { get; set; }
+        internal static Aes myAes { get; set; }
 
         /// <summary>
         /// Создаёт симметричный ключ
@@ -64,19 +64,19 @@ namespace CommunicationLibrary.Crypt
         /// <summary>
         /// Шифрует сообщение
         /// </summary>
-        internal static byte[] Encrypt(string plainText)
+        internal static byte[] Encrypt(string plainText, Aes aes)
         {
             // Check arguments.
             if (plainText == null || plainText.Length <= 0)
                 throw new ArgumentNullException("plainText");
-            if (myAes.Key == null || myAes.Key.Length <= 0)
+            if (aes.Key == null || aes.Key.Length <= 0)
                 throw new ArgumentNullException("Key");
-            if (myAes.IV == null || myAes.IV.Length <= 0)
+            if (aes.IV == null || aes.IV.Length <= 0)
                 throw new ArgumentNullException("IV");
             byte[] encrypted;
 
             // Create an encryptor to perform the stream transform.
-            ICryptoTransform encryptor = myAes.CreateEncryptor(myAes.Key, myAes.IV);
+            ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 
             // Create the streams used for encryption.
             using (MemoryStream msEncrypt = new MemoryStream())
@@ -99,21 +99,21 @@ namespace CommunicationLibrary.Crypt
         /// <summary>
         /// Расшифровывает сообщение
         /// </summary>
-        internal static string Decrypt(byte[] cipherText)
+        internal static string Decrypt(byte[] cipherText, Aes aes)
         {
             // Check arguments.
             if (cipherText == null || cipherText.Length <= 0)
                 throw new ArgumentNullException("cipherText");
-            if (myAes.Key == null || myAes.Key.Length <= 0)
+            if (aes.Key == null || aes.Key.Length <= 0)
                 throw new ArgumentNullException("Key");
-            if (myAes.IV == null || myAes.IV.Length <= 0)
+            if (aes.IV == null || aes.IV.Length <= 0)
                 throw new ArgumentNullException("IV");
 
             // Declare the string used to hold
             // the decrypted text.
             string plaintext = null;
 
-            ICryptoTransform decryptor = myAes.CreateDecryptor(myAes.Key, myAes.IV);
+            ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
 
             // Create the streams used for decryption.
             using (MemoryStream msDecrypt = new MemoryStream(cipherText))
@@ -133,6 +133,9 @@ namespace CommunicationLibrary.Crypt
             return plaintext;
         }
 
+        /// <summary>
+        /// Зашифровывает сообщение используя не изменяемый Key и IV
+        /// </summary>
         internal static string StaticEncrypt(string plainText)
         {
             byte[] encrypted;
@@ -163,6 +166,9 @@ namespace CommunicationLibrary.Crypt
             return Convert.ToBase64String(encrypted);
         }
 
+        /// <summary>
+        /// Расшифровывает сообщение используя не изменяемый Key и IV
+        /// </summary>
         internal static string StaticDecrypt(string encryptedText)
         {
             string decrypted = null;

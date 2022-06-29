@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,6 +15,7 @@ namespace ClientServerSocketsTCP.Class
     {
         public string Id { get; private set; }
         public NetworkStream Stream { get; private set; }
+        public Communication Comm { get; set; }
         TcpClient client;
         Server server; // объект сервера
 
@@ -30,7 +32,8 @@ namespace ClientServerSocketsTCP.Class
             try
             {
                 Stream = client.GetStream();
-                Communication.StartServerEncrypt(Stream);
+                Comm = new Communication(Stream);
+                Comm.StartServerEncrypt();
                 //Broadcast
                 //server.BroadcastMessage(message, this.Id);
 
@@ -39,7 +42,7 @@ namespace ClientServerSocketsTCP.Class
                     try
                     {
                         Console.WriteLine("[" + Id + "] " + "Прослушивание стрима");
-                        string data = Communication.ReceiveMessage(Stream);
+                        string data = Comm.ReceiveMessage();
                         if (data == null)
                         {
                             server.RemoveConnection(this.Id);
@@ -67,12 +70,18 @@ namespace ClientServerSocketsTCP.Class
                             }
                         }
                     }
+                    catch (System.IO.IOException)
+                    {
+                        string message = ("[" + Id + "] " + "Покинул чат");
+                        Console.WriteLine(message);
+                        break;
+                    }
                     catch (Exception ex)
                     {
-                        //message = ("[" + Id + "] " + "Exception: " + ex);
-                        //Console.WriteLine(message);
+                        string message = ("[" + Id + "] " + "Exception: " + ex);
+                        Console.WriteLine(message);
                         //server.BroadcastMessage(message, this.Id);
-                        break;
+                        break;                        
                     }
                 }
             }
@@ -121,8 +130,10 @@ namespace ClientServerSocketsTCP.Class
                     //Выполняем действие с пришедшим заголовком Test
                     Console.WriteLine("Test Packet: " + jsonPacket.Message);
                     //Отправляем обратно данные если это необходимо
-                    JsonPacket responseJsonPacket = new JsonPacket(jsonPacket.Header, null, "Ответ");
-                    Communication.SendMessage(JsonConvert.SerializeObject(responseJsonPacket), Stream);
+                    JsonPacket responseJsonPacket = new JsonPacket(jsonPacket.Header, null, "Test response, your message: " + jsonPacket.Message);
+                    Comm.SendMessage(responseJsonPacket);
+                    //Раскомментировать broadcast для тестовой рассылки данных всем клиентам
+                    //server.BroadcastMessage(responseJsonPacket, Id);
                     break;
                 default:
                     Console.WriteLine("[" + Id + "] " + "Пришел пакет с именем: " + jsonPacket.Header + " такой пакет не был распознан");

@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using CommunicationLibrary.Crypt;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -6,8 +7,8 @@ namespace ClientServerSocketsTCP.Class
 {
     internal class Server
     {
-        static TcpListener? tcpListener; // сервер для прослушивания
-        List<Client> clients = new List<Client>(); // все подключения
+        static TcpListener? tcpListener; // Сервер для прослушивания
+        List<Client> clients = new List<Client>(); // Список всех клиентов подключившихся к серверу
         //Конфигурация
         IPAddress ipAddress;
         int port;
@@ -31,7 +32,7 @@ namespace ClientServerSocketsTCP.Class
             if (client != null)
                 clients.Remove(client);
         }
-        // прослушивание входящих подключений
+        // Прослушивание входящих подключений
         public void Listen()
         {
             try
@@ -58,17 +59,17 @@ namespace ClientServerSocketsTCP.Class
         }
 
         // трансляция сообщения подключенным клиентам
-        public void BroadcastMessage(string message, string id)
+        public void BroadcastMessage(JsonPacket jsonPacket, string id)
         {
-            byte[] data = Encoding.Unicode.GetBytes(message);
             for (int i = 0; i < clients.Count; i++)
             {
                 if (clients[i].Id != id) // если id клиента не равно id отправляющего
                 {
-                    clients[i].Stream.Write(data, 0, data.Length); //передача данных
+                    clients[i].Comm.SendMessage(jsonPacket); // Передача сообщения всем остальным клиентам
                 }
             }
         }
+
         // отключение всех клиентов
         public void Disconnect()
         {
