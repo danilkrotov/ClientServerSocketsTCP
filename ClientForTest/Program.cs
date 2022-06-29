@@ -2,37 +2,31 @@
 using System.Net.Sockets;
 using CommunicationLibrary;
 using CommunicationLibrary.Crypt;
-using Newtonsoft.Json;
 
 string host = "127.0.0.1";
 int port = 8888;
-TcpClient? client;
+
+TcpClient? client = new TcpClient();
 NetworkStream? stream = null;
-
-client = new TcpClient();
-
+Communication? comm = null;
 try
 {
-    client.Connect(host, port); //подключение клиента
-    stream = client.GetStream(); // получаем поток
+    client.Connect(host, port); // Подключение
+    stream = client.GetStream(); // Получаем поток
     Console.WriteLine("Соединение установлено");
 
-    // устанавливаем зашифрованный канал
-    Communication.StartClientEncrypt(stream);
-
-    // запускаем новый поток для получения данных
-    Thread receiveThread = new Thread(new ThreadStart(ReceiveMessageThread));
-    receiveThread.Start(); //старт потока
-    Console.WriteLine("Поток для входящих сообщений запущен");
+    comm = new Communication(stream); // Передаём в библиотеку CommunicationLibrary поток
+    comm.StartClientEncrypt(); // Шифруем канал по RSA + AES
+        
+    Thread receiveThread = new Thread(new ThreadStart(ReceiveMessageThread)); // Запускаем отдельный поток для получения данных
+    receiveThread.Start();
 
     Console.WriteLine("Введите сообщение: ");
-
+    // В бесконечном цикле отправляем сообщения на сервер с помощью Console.ReadLine()
     while (true)
     {
-        //testStruct newStr = new testStruct();
-        JsonPacket packet = new JsonPacket("Test", "", Console.ReadLine());
-        Communication.SendMessage(JsonConvert.SerializeObject(packet), stream);
-        //stream.Write((byte*)newStr, 1, 1);
+        JsonPacket packet = new JsonPacket("Test", "", Console.ReadLine()); // JsonPacket класс для общения с сервером
+        comm.SendMessage(packet); // Отправляем данные на сервер
     }
 }
 catch (Exception ex)
@@ -42,16 +36,17 @@ catch (Exception ex)
 finally
 {
     if (stream != null)
-        stream.Close();//отключение потока
+        stream.Close(); // Отключение потока
     if (client != null)
-        client.Close();//отключение клиента
-    Environment.Exit(0); //завершение процесса
+        client.Close(); // Отключение клиента
+    Environment.Exit(0); // Завершение процесса
 }
 
 void ReceiveMessageThread()
 {
+    // В бесконечном цикле слушаем сервер и принимаем сообщения
     while (true)
     {
-        Console.WriteLine(Communication.ReceiveMessage(stream));
+        Console.WriteLine(comm.ReceiveMessage());        
     }
 }
